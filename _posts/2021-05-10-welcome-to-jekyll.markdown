@@ -22,6 +22,32 @@ print_hi('Tom')
 #=> prints 'Hi, Tom' to STDOUT.
 {% endhighlight %}
 
+{% highlight python %}
+def i_love_amandine():
+  print("She is hot")
+{% endhighlight %}
+
+{% highlight csharp %}
+class MyClass
+{
+  public void Hello()
+  {
+    System.Console.WriteLine("Hello");
+  }
+}
+{% endhighlight %}
+
+{% highlight typescript %}
+function hello(): string {
+  return "Hello";
+}
+{% endhighlight %}
+
+{% highlight clojure %}
+(defn hello-world []
+   (println "Hello World"))
+{% endhighlight %}
+
 Check out the [Jekyll docs][jekyll-docs] for more info on how to get the most out of Jekyll. File all bugs/feature requests at [Jekyll’s GitHub repo][jekyll-gh]. If you have questions, you can ask them on [Jekyll Talk][jekyll-talk].
 
 [jekyll-docs]: https://jekyllrb.com/docs/home
