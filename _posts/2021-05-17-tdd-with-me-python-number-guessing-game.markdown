@@ -615,3 +615,162 @@ Check off that "Revisit" todo. We have "revisited". And we can check off the sec
             √ use mock.call() instead of call() to make meaningful distinction in calling code
 """
 {% endhighlight %}
+
+### Our Next Todo
+
+We've completed 2 Red/Green/Refactor cycles.
+
+Now we need to decide what the new behavior should be.
+
+It would be nice to be able to accept user input as we've just asked them to guess a number between 1 and 10.
+
+What should our Game do?
+
+What should happen if the user does not enter a valid integer?
+
+The game should write a message saying that it did not receive a valid integer and re-ask the user for input.
+
+
+Let's update our Todo list.
+
+{% highlight python %}
+"""
+    TODO:
+        √ It writes a welcome message before the game begins
+            √ Make writer arg in Game ctor keyword only
+            √ Make writer attr in Game appear as non-public
+        √ It writes a message asking the player to guess a number between 1 and 10
+            √ Revisit the tests knowing about order of writer calls
+            √ DRY common test arrage/setup steps
+            √ put expectation on left side of assertEqual
+            √ use mock.call() instead of call() to make meaningful distinction in calling code
+        - It writes a helpful message if user does not enter a valid integer
+"""
+{% endhighlight %}
+
+Let's write that next test, starting with the assert.
+
+{% highlight python %}
+# ...
+    def test_it_writes_a_helpful_message_if_user_does_not_enter_valid_integer(self):
+        self.game.play()
+        second_to_last_write_call = self.writer.write.mock_calls[-2]
+        last_write_call = self.writer.write.mock_calls[-1]
+        reader = mock.Mock()
+
+        reader.read.assert_called_once()
+        self.assertEqual(
+            mock.call('"Hello" is not a valid integer.'),
+            second_to_last_write_call,
+        )
+        self.assertEqual(
+            mock.call('Please pick a number between 1 and 10'),
+            last_write_call,
+        )
+# ...
+{% endhighlight %}
+
+We get an error
+
+```
+AssertionError: Expected 'read' to have been called once. Called 0 times.
+```
+
+We have the same problem as before, our Game does not know about anything that accepts user input -- our Reader...
+
+<!-- todo: talk about using abstraction to get around IO -->
+
+Let's do the same thing we did for our Writer, let's pass our reader into our Game's constructor.
+
+our code looks like this...
+
+{% highlight python %}
+"""
+    TODO:
+        √ It writes a welcome message before the game begins
+            √ Make writer arg in Game ctor keyword only
+            √ Make writer attr in Game appear as non-public
+        √ It writes a message asking the player to guess a number between 1 and 10
+            √ Revisit the tests knowing about order of writer calls
+            √ DRY common test arrage/setup steps
+            √ put expectation on left side of assertEqual
+            √ use mock.call() instead of call() to make meaningful distinction in calling code
+        - It writes a helpful message if user does not enter a valid integer
+"""
+
+import unittest
+import unittest.mock as mock
+
+
+class NumberGuessingGameTests(unittest.TestCase):
+    def setUp(self):
+        self.writer = mock.Mock()
+        self.reader = mock.Mock()
+        self.game = Game(
+            reader=self.reader,
+            writer=self.writer,
+        )
+
+    def test_it_writes_a_welcome_message_before_the_game_begins(self):
+        self.game.play()
+        first_call = self.writer.write.mock_calls[0]
+        self.assertEqual(
+            mock.call('Welcome to the number guessing game'),
+            first_call,
+        )
+
+    def test_it_writes_a_message_asking_player_to_guess_number_between_1_and_10(self):
+        self.game.play()
+        second_call = self.writer.write.mock_calls[1]
+        self.assertEqual(
+            mock.call('Please pick a number between 1 and 10'),
+            second_call,
+        )
+
+    def test_it_writes_a_helpful_message_if_user_does_not_enter_valid_integer(self):
+        self.game.play()
+        second_to_last_write_call = self.writer.write.mock_calls[-2]
+        last_write_call = self.writer.write.mock_calls[-1]
+
+        self.reader.read.assert_called_once()
+        self.assertEqual(
+            mock.call('"Hello" is not a valid integer.'),
+            second_to_last_write_call,
+        )
+        self.assertEqual(
+            mock.call('Please pick a number between 1 and 10'),
+            last_write_call,
+        )
+
+
+class Game:
+    def __init__(
+        self,
+        *,
+        reader,
+        writer,
+    ):
+        self._reader = reader
+        self._writer = writer
+
+    def play(self):
+        self._writer.write('Welcome to the number guessing game')
+        self._writer.write('Please pick a number between 1 and 10')
+
+{% endhighlight %}
+
+so then we call our reader...
+
+{% highlight python %}
+user_guess = self._reader.read()
+{% endhighlight }
+
+good, we got past the first assertion, now we have a new error.
+
+<!-- todo: describe fake it until you make it -->
+
+```
+AssertionError: call('"Hello" is not a valid integer.') != call('Welcome to the number guessing game')
+```
+
+That is because we are not yet writing out any messages
