@@ -330,3 +330,86 @@ class Game:
         self._writer.write('Welcome to the number guessing game')
 {% endhighlight %}
 
+### Our Second Todo
+
+Now we have completed our first cycle so it is time to think about what to test next.
+
+The next thing it should do is ask me to guess a number between 1 and 10.
+
+Update your Todo
+{% highlight python %}
+"""
+    TODO:
+        √ It writes a welcome message before the game begins
+            √ Make writer arg in Game ctor keyword only
+            √ Make writer attr in Game appear as non-public
+        - It writes a message asking the player to guess a number between 1 and 10
+"""
+{% endhighlight %}
+
+
+Let's write our new test...
+
+{% highlight python %}
+class NumberGuessingGameTests(unittest.TestCase):
+    def test_it_writes_a_welcome_message_before_the_game_begins(self):
+        writer = Mock()
+        game = Game(
+            writer=writer
+        )
+        game.play()
+        writer.write.assert_called_once_with('Welcome to the number guessing game')
+
+    def test_it_writes_a_message_asking_player_to_guess_number_between_1_and_10(self):
+        writer = Mock()
+        game = Game(
+            writer=writer
+        )
+        game.play()
+        writer.write.assert_called_once_with('Please pick a number between 1 and 10')
+{% endhighlight %}
+
+A new Error!
+
+```
+AssertionError: expected call not found.
+Expected: write('Please pick a number between 1 and 10')
+Actual: write('Welcome to the number guessing game')
+```
+
+(Thanks to unittest for producing such nice errors.)
+
+BAM! red... now time to get to green...
+
+Let's update the Game class
+
+{% highlight python %}
+class Game:
+    def __init__(
+        self,
+        *,
+        writer,
+    ):
+        self._writer = writer
+
+    def play(self):
+        self._writer.write('Welcome to the number guessing game')
+        self._writer.write('Please pick a number between 1 and 10')
+{% endhighlight %}
+
+hmm... we still see an error, in fact now both of our tests are failing.
+
+```
+AssertionError: Expected 'write' to be called once. Called 2 times.
+Calls: [call('Welcome to the number guessing game'),
+ call('Please pick a number between 1 and 10')].
+```
+
+So it seems like we've learned something... maybe assert_called_once_with is exclusive. -- meaning that it is exclusive to not just the input, but the call itself.
+
+While this could seem frustrating another way to look at it is that our tests are giving us rapid feedback about the libraries we are using... making it easier to try new things.
+<!-- TODO: note that we _test out the new test to get the old one back to green -->
+<!-- TODO: assert that one was called first -->
+<!-- TODO: add todo to use mock.Mock and mock.call() to make things more clear in calling code -->
+<!-- TODO: add todo for drying up the test setup -->
+after googling for assert has calls with multiple calls I found an attribute called "mock_calls" that can be accessed and asserted against.
