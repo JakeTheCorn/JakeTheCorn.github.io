@@ -408,8 +408,210 @@ Calls: [call('Welcome to the number guessing game'),
 So it seems like we've learned something... maybe assert_called_once_with is exclusive. -- meaning that it is exclusive to not just the input, but the call itself.
 
 While this could seem frustrating another way to look at it is that our tests are giving us rapid feedback about the libraries we are using... making it easier to try new things.
-<!-- TODO: note that we _test out the new test to get the old one back to green -->
-<!-- TODO: assert that one was called first -->
-<!-- TODO: add todo to use mock.Mock and mock.call() to make things more clear in calling code -->
-<!-- TODO: add todo for drying up the test setup -->
-after googling for assert has calls with multiple calls I found an attribute called "mock_calls" that can be accessed and asserted against.
+
+After googling for assert has calls with multiple calls I found an attribute called "mock_calls" that can be accessed and asserted against.
+
+Let's try that...
+
+### Back to Safety (Back to Green)
+
+Currently both of our tests are failing. We need to fix that.
+
+Put an _ (underscore) in front of our new test method so that it is removed from the running.
+
+Now we only have 1 failing test.
+
+It is failing because we are wanting to call .write(msg: str) multiple times and are asserting that it is called only once.  To fix this we use our new mock_calls attribute.
+
+
+{% highlight python %}
+# ...
+import unittest
+from unittest.mock import Mock, call
+
+class NumberGuessingGameTests(unittest.TestCase):
+    def test_it_writes_a_welcome_message_before_the_game_begins(self):
+        writer = Mock()
+        game = Game(
+            writer=writer
+        )
+        game.play()
+        first_call = writer.write.mock_calls[0]
+        self.assertEqual(first_call, call('Welcome to the number guessing game'))
+
+    def _test_it_writes_a_message_asking_player_to_guess_number_between_1_and_10(self):
+        writer = Mock()
+        game = Game(
+            writer=writer
+        )
+        game.play()
+        writer.write.assert_called_once_with('Please pick a number between 1 and 10')
+# ...
+{% endhighlight %}
+
+```
+Ran 1 test in 0.001s
+```
+
+But one thing I'm not crazy about is that my tests now know about about the order of which the writer is called.  I will add a TODO to revisit this.
+
+{% highlight python %}
+"""
+    TODO:
+        √ It writes a welcome message before the game begins
+            √ Make writer arg in Game ctor keyword only
+            √ Make writer attr in Game appear as non-public
+        - It writes a message asking the player to guess a number between 1 and 10
+            - Revisit the tests knowing about order of writer calls
+"""
+{% endhighlight %}
+
+Now let's get that second test passing! We'll do something similar to what was done above...First, remove the underscore so the test runner will pick it up.
+
+{% highlight python %}
+# ...
+import unittest
+from unittest.mock import Mock, call
+
+class NumberGuessingGameTests(unittest.TestCase):
+    def test_it_writes_a_welcome_message_before_the_game_begins(self):
+        writer = Mock()
+        game = Game(
+            writer=writer
+        )
+        game.play()
+        first_call = writer.write.mock_calls[0]
+        self.assertEqual(first_call, call('Welcome to the number guessing game'))
+
+    def test_it_writes_a_message_asking_player_to_guess_number_between_1_and_10(self):
+        writer = Mock()
+        game = Game(
+            writer=writer
+        )
+        game.play()
+        second_call = writer.write.mock_calls[1]
+        self.assertEqual(second_call, call('Please pick a number between 1 and 10'))
+# ...
+{% endhighlight %}
+
+Now 2 tests are passing.
+
+```
+Ran 2 tests in 0.001s
+
+OK
+```
+
+### Refactor Check in number 2
+
+Looking at the code I think there are some things to address.
+
+1. We are repeating common arrange/setup functionality in both methods.  It would be nice to remove repetition here.
+2. I prefer putting the expectation on the left of my assertEqual calls.  It's just something I've noted from other test libraries and I'd like to maintain that habit
+3. I think the calls to the `call()` method are a little vague.  I would like to call `mock.call()` instead to put front and center in the code that this is a mock call.  Will have to change imports if possible
+
+
+Let's add these to our Todo list so that we don't have to keep them all in mind.
+
+{% highlight python %}
+# ...
+"""
+    TODO:
+        √ It writes a welcome message before the game begins
+            √ Make writer arg in Game ctor keyword only
+            √ Make writer attr in Game appear as non-public
+        - It writes a message asking the player to guess a number between 1 and 10
+            - Revisit the tests knowing about order of writer calls
+            - DRY common test arrage/setup steps
+            - put expectation on left side of assertEqual
+            - use mock.call() instead of call() to make meaningful distinction in calling code
+"""
+
+{% endhighlight %}
+
+We'll talk about the revisit portion in a minute.  Update the code and check the other three items off.
+
+At this point the file should look something like this...
+
+{% highlight python %}
+
+"""
+    TODO:
+        √ It writes a welcome message before the game begins
+            √ Make writer arg in Game ctor keyword only
+            √ Make writer attr in Game appear as non-public
+        - It writes a message asking the player to guess a number between 1 and 10
+            - Revisit the tests knowing about order of writer calls
+            √ DRY common test arrage/setup steps
+            √ put expectation on left side of assertEqual
+            √ use mock.call() instead of call() to make meaningful distinction in calling code
+"""
+
+import unittest
+import unittest.mock as mock
+
+
+class NumberGuessingGameTests(unittest.TestCase):
+    def setUp(self):
+        self.writer = mock.Mock()
+        self.game = Game(
+            writer=self.writer
+        )
+
+    def test_it_writes_a_welcome_message_before_the_game_begins(self):
+        self.game.play()
+        first_call = self.writer.write.mock_calls[0]
+        self.assertEqual(
+            mock.call('Welcome to the number guessing game'),
+            first_call,
+        )
+
+    def test_it_writes_a_message_asking_player_to_guess_number_between_1_and_10(self):
+        self.game.play()
+        second_call = self.writer.write.mock_calls[1]
+        self.assertEqual(
+            mock.call('Please pick a number between 1 and 10'),
+            second_call,
+        )
+
+
+class Game:
+    def __init__(
+        self,
+        *,
+        writer,
+    ):
+        self._writer = writer
+
+    def play(self):
+        self._writer.write('Welcome to the number guessing game')
+        self._writer.write('Please pick a number between 1 and 10')
+
+{% endhighlight %}
+
+### Discourage Sharing
+
+The setup method runs for every test case.  This discourages shared state which enables us to improve the ergonomics of our tests while still maintaining high degrees of isolation. Isolation is really important since one would like to know that tests are not affecting each other thereby harming determinism -- one of the main points of testing.
+
+### Tradeoffs
+
+At this point I'd like to take a second to discuss tradeoffs.
+
+- Tests should be behavior DEPENDENT and structure INDEPENDENT
+   - Ideally we would like our tests to know as little about structure as possible so that structure can safely be changed/improved without breaking our tests.  Sometimes it is harder than it is worth, but it's always worth some examination.  In our case, our test knows about the order of calls to .write(msg: str) in the Game class.  I think this is okay though because what if instead of it knowing about structure we thought of it as the spec... for example: "It asks the writer to write a welcome message, then asks the writer to write the rules of the game".  That doesn't seem as structural. So it goes, and at this time I do not have a better solution.
+
+Check off that "Revisit" todo. We have "revisited". And we can check off the second item as we have gone through another Red/Green/Refactor cycle.
+
+{% highlight python %}
+"""
+    TODO:
+        √ It writes a welcome message before the game begins
+            √ Make writer arg in Game ctor keyword only
+            √ Make writer attr in Game appear as non-public
+        √ It writes a message asking the player to guess a number between 1 and 10
+            √ Revisit the tests knowing about order of writer calls
+            √ DRY common test arrage/setup steps
+            √ put expectation on left side of assertEqual
+            √ use mock.call() instead of call() to make meaningful distinction in calling code
+"""
+{% endhighlight %}
