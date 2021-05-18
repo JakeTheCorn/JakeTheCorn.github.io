@@ -8,7 +8,7 @@
             √ DRY common test arrage/setup steps
             √ put expectation on left side of assertEqual
             √ use mock.call() instead of call() to make meaningful distinction in calling code
-        - It writes a helpful message if user does not enter a valid integer
+        √ It writes a helpful message if user does not enter a valid integer
 """
 
 import unittest
@@ -41,19 +41,26 @@ class NumberGuessingGameTests(unittest.TestCase):
         )
 
     def test_it_writes_a_helpful_message_if_user_does_not_enter_valid_integer(self):
-        self.game.play()
-        second_to_last_write_call = self.writer.write.mock_calls[-2]
-        last_write_call = self.writer.write.mock_calls[-1]
+        for user_guess in [
+            'Hello',
+            'Goodbye',
+        ]:
+            self.setUp()
+            with self.subTest(user_guess):
+                self.reader.read.return_value = user_guess
+                self.game.play()
+                second_to_last_write_call = self.writer.write.mock_calls[-2]
+                last_write_call = self.writer.write.mock_calls[-1]
 
-        self.reader.read.assert_called_once()
-        self.assertEqual(
-            mock.call('"Hello" is not a valid integer.'),
-            second_to_last_write_call,
-        )
-        self.assertEqual(
-            mock.call('Please pick a number between 1 and 10'),
-            last_write_call,
-        )
+                self.reader.read.assert_called_once()
+                self.assertEqual(
+                    mock.call(f'"{user_guess}" is not a valid integer.'),
+                    second_to_last_write_call,
+                )
+                self.assertEqual(
+                    mock.call('Please pick a number between 1 and 10'),
+                    last_write_call,
+                )
 
 
 class Game:
@@ -68,6 +75,11 @@ class Game:
 
     def play(self):
         self._writer.write('Welcome to the number guessing game')
-        self._writer.write('Please pick a number between 1 and 10')
+        self._write_rules()
         user_guess = self._reader.read()
-        print(user_guess)
+        if not user_guess.isdigit():
+            self._writer.write(f'"{user_guess}" is not a valid integer.')
+            self._write_rules()
+
+    def _write_rules(self):
+        self._writer.write('Please pick a number between 1 and 10')

@@ -773,4 +773,138 @@ good, we got past the first assertion, now we have a new error.
 AssertionError: call('"Hello" is not a valid integer.') != call('Welcome to the number guessing game')
 ```
 
-That is because we are not yet writing out any messages
+That is because we are not yet writing out any new messages
+
+Let's do that
+
+So we update the play method...
+
+{% highlight python %}
+    def play(self):
+        self._writer.write('Welcome to the number guessing game')
+        self._writer.write('Please pick a number between 1 and 10')
+        user_guess = self._reader.read()
+        self._writer.write('"Hello" is not a valid integer.')
+        self._writer.write('Please pick a number between 1 and 10')
+{% endhighlight %}
+
+Our tests pass again!
+
+```
+Ran 3 tests in 0.003s
+
+OK
+```
+
+### Fake it until you make it
+
+Here we were able to pass our tests fairly quickly by hard-coding...
+
+but we still have work to do...
+
+We need to drive our tests toward specificity so that we can drive our functionality towards generality.
+
+So Let's write another assertion in the same test to help drive this functionality.
+(And worth noting, we're not actually returning "hello" from the users input)
+
+
+Change our test method to this...
+
+{% highlight python %}
+    def test_it_writes_a_helpful_message_if_user_does_not_enter_valid_integer(self):
+        self.reader.read.return_value = 'Hello'
+        self.game.play()
+        second_to_last_write_call = self.writer.write.mock_calls[-2]
+        last_write_call = self.writer.write.mock_calls[-1]
+
+
+        self.reader.read.assert_called_once()
+        self.assertEqual(
+            mock.call('"Hello" is not a valid integer.'),
+            second_to_last_write_call,
+        )
+        self.assertEqual(
+            mock.call('Please pick a number between 1 and 10'),
+            last_write_call,
+        )
+
+        # re-setup
+        self.setUp()
+        self.reader.read.return_value = 'Goodbye'
+        self.game.play()
+        second_to_last_write_call = self.writer.write.mock_calls[-2]
+        last_write_call = self.writer.write.mock_calls[-1]
+
+
+        self.reader.read.assert_called_once()
+        self.assertEqual(
+            mock.call('"Goodbye" is not a valid integer.'),
+            second_to_last_write_call,
+        )
+        self.assertEqual(
+            mock.call('Please pick a number between 1 and 10'),
+            last_write_call,
+        )
+{% endhighlight %}
+
+And we should have a new error...
+
+```
+AssertionError: call('"Goodbye" is not a valid integer.') != call('"Hello" is not a valid integer.')
+```
+
+So now are tests are forcing us back to red... we have to generalize to pass the tests...
+we have to code a condition in our play method...
+
+{% highlight python %}
+    def play(self):
+        self._writer.write('Welcome to the number guessing game')
+        self._writer.write('Please pick a number between 1 and 10')
+        user_guess = self._reader.read()
+        if not user_guess.isdigit():
+            self._writer.write(f'"{user_guess}" is not a valid integer.')
+            self._writer.write('Please pick a number between 1 and 10')
+{% endhighlight %}
+
+Tests are once again passing (Green).
+
+Time to refactor
+
+But what to refactor?
+
+Well, There is some duplication for "Please pick a number between 1 and 10". Let's extract that into a "private" method named `_write_rules()`.
+
+Also I would like to make our new test method more readable and remove duplication.  Maybe there is a way to parameterize test methods in python unittest... googling...
+
+Apparently as of python 3.4 there is a subTest context manager that allows for parameterization.
+
+Let's try that...
+
+{% highlight python %}
+    def test_it_writes_a_helpful_message_if_user_does_not_enter_valid_integer(self):
+        for user_guess in [
+            'Hello',
+            'Goodbye',
+        ]:
+            self.setUp()
+            with self.subTest(user_guess):
+                self.reader.read.return_value = user_guess
+                self.game.play()
+                second_to_last_write_call = self.writer.write.mock_calls[-2]
+                last_write_call = self.writer.write.mock_calls[-1]
+
+                self.reader.read.assert_called_once()
+                self.assertEqual(
+                    mock.call(f'"{user_guess}" is not a valid integer.'),
+                    second_to_last_write_call,
+                )
+                self.assertEqual(
+                    mock.call('Please pick a number between 1 and 10'),
+                    last_write_call,
+                )
+{% endhighlight %}
+
+It worked :)
+
+(for bonus points make the test fail to check out what it looks like, it's pretty nice)
+
