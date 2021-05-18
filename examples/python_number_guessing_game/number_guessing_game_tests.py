@@ -9,6 +9,7 @@
             √ put expectation on left side of assertEqual
             √ use mock.call() instead of call() to make meaningful distinction in calling code
         √ It writes a helpful message if user does not enter a valid integer
+        - It writes a success message if the user inputs a correct guess.
 """
 
 import unittest
@@ -19,9 +20,11 @@ class NumberGuessingGameTests(unittest.TestCase):
     def setUp(self):
         self.writer = mock.Mock()
         self.reader = mock.Mock()
+        self.random_integer_getter = mock.Mock()
         self.game = Game(
             reader=self.reader,
             writer=self.writer,
+            random_integer_getter=self.random_integer_getter,
         )
 
     def test_it_writes_a_welcome_message_before_the_game_begins(self):
@@ -44,6 +47,7 @@ class NumberGuessingGameTests(unittest.TestCase):
         for user_guess in [
             'Hello',
             'Goodbye',
+            '1.1',
         ]:
             self.setUp()
             with self.subTest(user_guess):
@@ -62,6 +66,17 @@ class NumberGuessingGameTests(unittest.TestCase):
                     last_write_call,
                 )
 
+    def test_it_writes_a_success_message_if_user_inputs_correct_guess(self):
+        self.reader.read.return_value = '5'
+        self.random_integer_getter.get_random_integer.return_value = 5
+        self.game.play()
+        last_write_call = self.writer.write.mock_calls[-1]
+        self.reader.read.assert_called_once()
+        self.assertEqual(
+            mock.call('Success! The correct number was 5'),
+            last_write_call,
+        )
+
 
 class Game:
     def __init__(
@@ -69,17 +84,22 @@ class Game:
         *,
         reader,
         writer,
+        random_integer_getter,
     ):
         self._reader = reader
         self._writer = writer
+        self._random_integer_getter = random_integer_getter
 
     def play(self):
         self._writer.write('Welcome to the number guessing game')
         self._write_rules()
+        random_number = self._random_integer_getter.get_random_integer()
         user_guess = self._reader.read()
         if not user_guess.isdigit():
             self._writer.write(f'"{user_guess}" is not a valid integer.')
             self._write_rules()
+        if user_guess == str(random_number):
+            self._writer.write(f'Success! The correct number was {random_number}')
 
     def _write_rules(self):
         self._writer.write('Please pick a number between 1 and 10')
