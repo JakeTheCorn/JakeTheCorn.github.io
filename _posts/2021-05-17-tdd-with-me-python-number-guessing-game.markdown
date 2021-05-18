@@ -61,6 +61,8 @@ You should then see an error like
 ModuleNotFoundError: No module named 'number_guessing_game_tests'
 ```
 
+_(Errors like this are good feedback, errors can be our friends)_
+
 So to get around this, let's create a file and rerun...
 
 {% highlight bash %}
@@ -79,7 +81,7 @@ But it was kind of a pain to have to manually run these tests... let's automate 
 watch python -m unittest number_guessing_game_tests.py
 {% endhighlight %}
 
-Great! we're able to run our tests... but we don't have any tests in our file...
+Great! we're able to run our tests automatically... but we don't have any tests in our file...
 
 But... we also don't know yet _what to test_!
 
@@ -122,11 +124,209 @@ Ran 1 test in 0.000s
 
 ### No new code until a new test is failing
 
+One of the rules of TDD is that no new production code should be written until we've first written a failing test.
+
+But what comprises a test...?
+
+### Arrange, Act, Assert
 
 
+Every test has three parts
+- Arrange
+  - We set up controlled inputs and conditions important to the test.
+- Act
+  - We pass in any inputs we built up in the arrange step and execute the code that is under test.
+- Assert
+  - We assert the results we expect to see.
 
-<!--
+_(If you can try to write the assert step first)_
 
-1. Optimize Feedback Cycles
-      - Watcher: Preferably on a watcher where when new changes are saved, the tests are run automatically.  In lieu of this, run the tests in a while loop from command line.
-      - Try to only run the tests needed. -->
+### Back to writing our test...
+
+Let's start by writing the assertion first
+
+{% highlight python %}
+class NumberGuessingGameTests(unittest.TestCase):
+    def test_it_writes_a_welcome_message_before_the_game_begins(self):
+        writer.write.assert_called_once_with('Welcome to the number guessing game')
+{% endhighlight %}
+
+
+Now you should see something like...
+```
+NameError: name 'writer' is not defined
+```
+
+That's okay, let's create it...
+
+### Mocks
+
+So we want to say that a writer's write method is called... but now we have the problem of defining a "writer"
+
+(If we weren't test-driving this we probably just would have written this to stdout by calling print...but this is so much better, I'll tell you why later)
+
+Let's use python's standard mock library...
+
+{% highlight python %}
+# ...
+import unittest
+from unittest.mock import Mock
+
+
+class NumberGuessingGameTests(unittest.TestCase):
+    def test_it_writes_a_welcome_message_before_the_game_begins(self):
+        writer = Mock()
+        writer.write.assert_called_once_with('Welcome to the number guessing game')
+{% endhighlight %}
+
+Now we look and the error has changed...
+
+```
+AssertionError: Expected 'write' to be called once. Called 0 times.
+```
+
+So, we start working our way backwards.
+
+**_What is the relationship of the Game and the Writer?_**
+
+Let's pass a writer to the Game's constructor and call game.play()
+
+{% highlight python %}
+class NumberGuessingGameTests(unittest.TestCase):
+    def test_it_writes_a_welcome_message_before_the_game_begins(self):
+        writer = unittest.mock.Mock()
+        game = Game(writer)
+        writer.write.assert_called_once_with('Welcome to the number guessing game')
+{% endhighlight %}
+
+Now we get a new error...
+
+```
+NameError: name 'Game' is not defined
+```
+
+Let's define it in the same file... Currently the test is the only client of our Game code so it makes sense to keep it as close as possible to keep things easy to change.
+
+Below our test class let's define Game...
+
+{% highlight python %}
+class Game:
+    def __init__(
+        self,
+        writer,
+    ):
+        self.writer = writer
+{% endhighlight %}
+
+New error...
+
+```
+AttributeError: 'Game' object has no attribute 'play'
+```
+
+Let's define play to make that error go away...
+
+{% highlight python %}
+class Game:
+    def __init__(
+        self,
+        writer,
+    ):
+        self.writer = writer
+
+    def play(self):
+        pass
+{% endhighlight %}
+
+Yet another error...
+
+```
+AssertionError: Expected 'write' to be called once. Called 0 times.
+```
+
+But... Didn't we already have this error? Yes... but now we have some idea about the relationship our Game has with our Writer, so we're actually much further along. Let's call our write method...
+
+{% highlight python %}
+class Game:
+    def __init__(
+        self,
+        writer,
+    ):
+        self.writer = writer
+
+    def play(self):
+        self.writer.write('Welcome to the number guessing game')
+{% endhighlight %}
+
+** Viola! A passing test! **
+```
+Ran 1 test in 0.001s
+
+OK
+```
+
+### Refactor Check In...
+
+You may remember that we had three steps...
+1. Red - Write a failing test
+2. Green - Write the code that makes it pass
+3. Refactor - Improve the design of the existing code.
+
+So we are at the refactor stage for this functionality.
+
+What kinds of things could we do to improve the design?
+
+I'd like to...
+- Change the positional argument "writer" to a keyword only argument (I think it's less confusing to always use names instead of trying to conflate a position with a meaning.)
+- Use an underscore inside the Game class for its writer attribute to denote that it should be viewed as non-public.
+
+I like to use the todo list to capture these thoughts so I don't have to keep them in my head while I'm making other changes.
+
+So...Let's add these to the todo list...
+
+{% highlight python %}
+"""
+    TODO:
+        - It writes a welcome message before the game begins
+            - Make writer arg in Game ctor keyword only
+            - Make writer attr in Game appear as non-public
+"""
+{% endhighlight %}
+
+We make our changes and update the todo accordingly...
+
+The file should now resemble
+
+{% highlight python %}
+"""
+    TODO:
+        √ It writes a welcome message before the game begins
+            √ Make writer arg in Game ctor keyword only
+            √ Make writer attr in Game appear as non-public
+"""
+
+import unittest
+from unittest.mock import Mock
+
+class NumberGuessingGameTests(unittest.TestCase):
+    def test_it_writes_a_welcome_message_before_the_game_begins(self):
+        writer = Mock()
+        game = Game(
+            writer=writer
+        )
+        game.play()
+        writer.write.assert_called_once_with('Welcome to the number guessing game')
+
+
+class Game:
+    def __init__(
+        self,
+        *,
+        writer,
+    ):
+        self._writer = writer
+
+    def play(self):
+        self._writer.write('Welcome to the number guessing game')
+{% endhighlight %}
+
