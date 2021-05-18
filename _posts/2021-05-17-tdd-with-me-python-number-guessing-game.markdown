@@ -11,10 +11,6 @@ This is an exercise for learning tdd (test driven development).
 At a high level TDD has a few rules.
 
 1. Get Tests Running
-   <!-- - Optimize Feedback Cycles
-      - Watcher: Preferably on a watcher where when new changes are saved, the tests are run automatically.  In lieu of this, run the tests in a while loop from command line.
-      - Try to only run the tests needed. -->
-
 2. Write a failing test (Red)
 3. Write the code that passes this test. (Green)
 4. Refactor the code to improve design  (Refactor)
