@@ -763,7 +763,7 @@ so then we call our reader...
 
 {% highlight python %}
 user_guess = self._reader.read()
-{% endhighlight }
+{% endhighlight %}
 
 good, we got past the first assertion, now we have a new error.
 
