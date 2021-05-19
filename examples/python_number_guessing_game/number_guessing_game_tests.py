@@ -9,7 +9,11 @@
             √ put expectation on left side of assertEqual
             √ use mock.call() instead of call() to make meaningful distinction in calling code
         √ It writes a helpful message if user does not enter a valid integer
-        - It writes a success message if the user inputs a correct guess.
+        √ It writes a success message if the user inputs a correct guess.
+        - When user inputs valid integer
+          - When it is an incorrect guess
+            - Then it writes a message saying incorrect
+            - Then it writes a message about how many guesses left
 """
 
 import unittest
@@ -77,6 +81,15 @@ class NumberGuessingGameTests(unittest.TestCase):
             last_write_call,
         )
 
+    def test_it_writes_incorrect_with_how_many_guesses_remain_when_incorrect_guess(self):
+        self.reader.read.return_value = '4'
+        self.game.play()
+        last_write_call = self.writer.write.mock_calls[-1]
+        self.assertEqual(
+            mock.call('Incorrect! 2 guesses remaining'),
+            last_write_call
+        )
+
 
 class Game:
     def __init__(
@@ -98,8 +111,11 @@ class Game:
         if not user_guess.isdigit():
             self._writer.write(f'"{user_guess}" is not a valid integer.')
             self._write_rules()
+            return
         if user_guess == str(random_number):
             self._writer.write(f'Success! The correct number was {random_number}')
+        else:
+            self._writer.write('Incorrect! 2 guesses remaining')
 
     def _write_rules(self):
         self._writer.write('Please pick a number between 1 and 10')

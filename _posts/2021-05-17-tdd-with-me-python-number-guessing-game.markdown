@@ -1078,7 +1078,77 @@ So now we have our failing test, let's make it pass!
             self._writer.write(f'Success! The correct number was {random_number}')
 {% endhighlight %}
 
+And we're Green!
 
+```
+Ran 4 tests in 0.007s
+
+OK
+```
+
+Now we need to review structural decisions...
+I can't find anything that is creating a lot of duplication.  It might be nice to use the subTest context manager in the new test to make it easier to add more test cases for the success case.  But I don't think it's needed for now.
+
+Let's check off the todo.
+
+
+## Next Todo: User Input is integer but incorrect guess
+
+Let's add a new todo for this. I'll try to write it Gherkin style
+
+{% highlight python %}
+"""
+    TODO:
+        ....
+        - When user inputs valid integer
+          - When it is an incorrect guess
+            - Then it writes a message saying incorrect
+            - Then it writes a message about how many guesses left
+"""
+{% endhighlight %}
+
+Alright, Let's try to get to that Red phase again
+
+{% highlight python %}
+    def test_it_writes_incorrect_with_how_many_guesses_remain_when_incorrect_guess(self):
+        self.reader.read.return_value = '4'
+        self.game.play()
+        last_write_call = self.writer.write.mock_calls[-1]
+        self.assertEqual(
+            mock.call('Incorrect! 2 guesses remaining'),
+            last_write_call
+        )
+{% endhighlight %}
+
+And our new error...
+
+```
+AssertionError: call('Incorrect! 2 guesses remaining') != call('Please pick a number between 1 and 10')
+```
+
+Let's get to Green!
+
+{% highlight python %}
+    def play(self):
+        self._writer.write('Welcome to the number guessing game')
+        self._write_rules()
+        random_number = self._random_integer_getter.get_random_integer()
+        user_guess = self._reader.read()
+        if not user_guess.isdigit():
+            self._writer.write(f'"{user_guess}" is not a valid integer.')
+            self._write_rules()
+            return
+        if user_guess == str(random_number):
+            self._writer.write(f'Success! The correct number was {random_number}')
+        else:
+            self._writer.write('Incorrect! 2 guesses remaining')
+{% endhighlight %}
+
+```
+Ran 5 tests in 0.009s
+
+OK
+```
 
 <!--
 
