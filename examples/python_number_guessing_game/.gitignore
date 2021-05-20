@@ -1,1 +1,4 @@
 __pycache__
+*.pyc
+logs
+my_guesses

@@ -1209,7 +1209,99 @@ user_guess = self._reader.read().strip()
 
 There are no structural issues caused by calling .strip() on a string. Let's check off this todo...
 
-## Next Todo: Too many wrong guesses
+## Next Todo: Decrements available guesses after multiple wrong guesses
+
+We add our todo...
+
+{% highlight python %}
+"""
+...
+- It decrements available guesses after multiple wrong guesses
+...
+"""
+{% endhighlight %}
+
+And add our test...
+
+{% highlight python %}
+    def test_it_decrements_available_guesses_after_multiple_wrong_guesses(self):
+        self.reader.read.side_effect = ['1', '2', '3']
+        self.random_integer_getter.get_random_integer.return_value = 4
+        self.game.play()
+        self.assertEqual(
+            3,
+            self.reader.read.call_count,
+            'Expected Reader to have been called 3 times'
+        )
+        self.assertEqual(
+            mock.call('Incorrect! 2 guesses remaining'),
+            self.writer.write.mock_calls[-4],
+        )
+        self.assertEqual(
+            mock.call('Incorrect! 1 guess remaining'),
+            self.writer.write.mock_calls[-3],
+        )
+        self.assertEqual(
+            mock.call('Incorrect! 0 guesses remaining'),
+            self.writer.write.mock_calls[-2],
+        )
+        self.assertEqual(
+            mock.call('Failure! The correct number was 4'),
+            self.writer.write.mock_calls[-1],
+        )
+{% endhighlight %}
+
+and we're red! our error.
+
+```
+AssertionError: 3 != 1 : Expected Reader to have been called 3 times
+```
+
+That is because we only ever call it once. We need to call it while we don't have a correct guess and we still have guesses left...
+
+Let's update the play method
+
+{% highlight python %}
+    def play(self):
+        MAX_GUESSES = 3
+        guess_count = 0
+        self._writer.write('Welcome to the number guessing game')
+        self._write_rules()
+        random_number = self._random_integer_getter.get_random_integer()
+
+        while guess_count < MAX_GUESSES:
+            user_guess = self._reader.read().strip()
+            guess_count += 1
+            if not user_guess.isdigit():
+                self._writer.write(f'"{user_guess}" is not a valid integer.')
+                self._write_rules()
+                return
+            if user_guess == str(random_number):
+                self._writer.write(f'Success! The correct number was {random_number}')
+            else:
+                self._writer.write('Incorrect! 2 guesses remaining')
+{% endhighlight %}
+
+Now we have 2 failing tests...
+
+```
+test_it_writes_a_success_message_if_user_inputs_correct_guess
+
+we asserted that read was called once, but now it is called three times. I think with the new test, we can actually remove that assertion. We might have been asserting too many things in a single test.
+```
+
+We remove it and we're good! Now we're back to one failing test... our new one!
+
+```
+AssertionError: call('Incorrect! 2 guesses remaining') != call('Please pick a number between 1 and 10')
+```
+
+<!--
+Todo: test it exits after success
+Todo: it prints helpful message if saem guess attempted
+ -->
+
+
 
 <!--
 
