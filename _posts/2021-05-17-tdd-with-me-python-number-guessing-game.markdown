@@ -1150,6 +1150,67 @@ Ran 5 tests in 0.009s
 OK
 ```
 
+Let's see if there is any kind of improvements that can be made...
+
+Well, one thing ...
+
+If the user enters in a "3" our code will work, but what if they enter in a " 3   "?
+
+Let's add a todo for that and continue examining our code for structural improvements.
+
+{% highlight python %}
+"""
+...
+- It automatically ignores leading and trailing whitespace from user input.
+...
+"""
+{% endhighlight %}
+
+I see no glaring structural issues.  Let's check those previous TODOs off!
+
+{% highlight python %}
+"""
+√ It writes a success message if the user inputs a correct guess.
+    √ When user inputs valid integer
+    √ When it is an incorrect guess
+        √ Then it writes a message saying incorrect and how many guesses left
+...
+"""
+{% endhighlight %}
+
+## Next Todo - Ignore leading/trailing whitespace
+
+Our Test...
+
+{% highlight python %}
+    def test_it_ignores_trailing_and_leading_whitespace_from_user_input(self):
+        self.reader.read.return_value = ' 3  \n '
+        self.random_integer_getter.get_random_integer.return_value = 3
+        self.game.play()
+        last_write_call = self.writer.write.mock_calls[-1]
+        self.assertEqual(
+            mock.call('Success! The correct number was 3'),
+            last_write_call,
+        )
+{% endhighlight %}
+
+And we're red!
+```
+AssertionError: call('Success! The correct number was 3') != call('Please pick a number between 1 and 10')
+```
+
+Let's get to Green. I think we can just strip the user's input in the .play() method
+
+{% highlight python %}
+# ...
+user_guess = self._reader.read().strip()
+# ...
+{% endhighlight %}
+
+There are no structural issues caused by calling .strip() on a string. Let's check off this todo...
+
+## Next Todo: Too many wrong guesses
+
 <!--
 
 TODO: what about whitespace?
