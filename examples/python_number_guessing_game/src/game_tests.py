@@ -46,7 +46,10 @@ class NumberGuessingGameTests(unittest.TestCase):
         ]:
             self.setUp()
             # bad guess followed by three valid guesses to avoid test hanging
-            self.reader.read.side_effect = [user_guess, '1', '2', '3']
+            self.setReturns(
+                guesses=[user_guess, '1', '2', '3'],
+                get_random_integer=5,
+            )
             with self.subTest(user_guess):
                 self.game.play()
                 self.assertMessages([
@@ -57,8 +60,10 @@ class NumberGuessingGameTests(unittest.TestCase):
                 ])
 
     def test_it_writes_a_success_message_if_user_inputs_correct_guess(self):
-        self.reader.read.side_effect = ['5']
-        self.random_integer_getter.get_random_integer.return_value = 5
+        self.setReturns(
+            guesses=['5'],
+            get_random_integer=5,
+        )
         self.game.play()
         self.assertMessages([
             'Welcome to the number guessing game',
@@ -67,8 +72,10 @@ class NumberGuessingGameTests(unittest.TestCase):
         ])
 
     def test_it_writes_incorrect_with_how_many_guesses_remain_when_incorrect_guess(self):
-        self.reader.read.return_value = '4'
-        self.random_integer_getter.get_random_integer.return_value = 2
+        self.setReturns(
+            guesses=['4', '4', '4'],
+            get_random_integer=2,
+        )
         self.game.play()
         self.assertMessages([
             'Welcome to the number guessing game',
@@ -77,8 +84,10 @@ class NumberGuessingGameTests(unittest.TestCase):
         ])
 
     def test_it_ignores_trailing_and_leading_whitespace_from_user_input(self):
-        self.reader.read.return_value = ' 3  \n '
-        self.random_integer_getter.get_random_integer.return_value = 3
+        self.setReturns(
+            guesses=[' 3  \n'],
+            get_random_integer=3,
+        )
         self.game.play()
         self.assertMessages([
             'Welcome to the number guessing game',
@@ -87,8 +96,10 @@ class NumberGuessingGameTests(unittest.TestCase):
         ])
 
     def test_it_decrements_available_guesses_after_multiple_wrong_guesses(self):
-        self.reader.read.side_effect = ['1', '2', '3']
-        self.random_integer_getter.get_random_integer.return_value = 4
+        self.setReturns(
+            guesses=['1', '2', '3'],
+            get_random_integer=4,
+        )
         self.game.play()
         self.assertMessages([
             'Welcome to the number guessing game',
@@ -105,3 +116,11 @@ class NumberGuessingGameTests(unittest.TestCase):
                 mock.call(msg),
                 self.writer.write.mock_calls[idx],
             )
+
+    def setReturns(
+        self,
+        guesses,
+        get_random_integer
+    ):
+        self.reader.read.side_effect = guesses
+        self.random_integer_getter.get_random_integer.return_value = get_random_integer
