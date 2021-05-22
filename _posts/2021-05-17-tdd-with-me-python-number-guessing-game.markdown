@@ -1297,7 +1297,6 @@ AssertionError: call('Incorrect! 2 guesses remaining') != call('Please pick a nu
 ```
 
 <!--
-Todo: test it exits after success
 Todo: it prints helpful message if saem guess attempted
  -->
 
