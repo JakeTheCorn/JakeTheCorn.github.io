@@ -8,10 +8,3 @@ run-shell:
     --workdir=/python_number_guessing_game \
     python:3.10.0b1-alpine3.13 \
         /bin/sh;
-
-unittest:
-    @python -m unittest discover --pattern='*_tests.py'
-
-install:
-    @apk add make;
-    @pip install coverage;

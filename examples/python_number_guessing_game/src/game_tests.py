@@ -68,6 +68,7 @@ class NumberGuessingGameTests(unittest.TestCase):
 
     def test_it_writes_incorrect_with_how_many_guesses_remain_when_incorrect_guess(self):
         self.reader.read.return_value = '4'
+        self.random_integer_getter.get_random_integer.return_value = 2
         self.game.play()
         self.assertMessages([
             'Welcome to the number guessing game',
@@ -97,6 +98,7 @@ class NumberGuessingGameTests(unittest.TestCase):
             'Failure! The correct number was 4',
         ])
 
+    # helpers
     def assertMessages(self, messages: list[str]) -> None:
         for idx, msg in enumerate(messages):
             self.assertEqual(
