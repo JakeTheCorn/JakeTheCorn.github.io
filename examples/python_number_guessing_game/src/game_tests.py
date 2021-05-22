@@ -1,35 +1,20 @@
-# """
-#     TODO:
-#         √ It writes a welcome message before the game begins
-#             √ Make writer arg in Game ctor keyword only
-#             √ Make writer attr in Game appear as non-public
-#         √ It writes a message asking the player to guess a number between 1 and 10
-#             √ Revisit the tests knowing about order of writer calls
-#             √ DRY common test arrage/setup steps
-#             √ put expectation on left side of assertEqual
-#             √ use mock.call() instead of call() to make meaningful distinction in calling code
-#         √ It writes a helpful message if user does not enter a valid integer
-#         √ It writes a success message if the user inputs a correct guess.
-#         √ When user inputs valid integer
-#           √ When it is an incorrect guess
-#             √ Then it writes a message saying incorrect and how many guesses left
-#         √ It automatically ignores leading and trailing whitespace from user input.
-#         √ It decrements available guesses after multiple wrong guesses
-# """
+"""
+    TODO:
+        √ It writes a welcome message before the game begins
+        √ It writes a message asking the player to guess a number between 1 and 10
+        √ It writes a helpful message if user does not enter a valid integer
+        √ It writes a success message if the user inputs a correct guess.
+        √ It writes message with Failure and how many guesses left when user is wrong
+        √ It automatically ignores leading and trailing whitespace from user input.
+        √ It decrements available guesses after multiple wrong guesses
+"""
 
 import unittest
 import unittest.mock as mock
 from .game import Game
 
-class TestCase(unittest.TestCase):
-    def assertMessages(self, messages: list[str]) -> None:
-        for idx, msg in enumerate(messages):
-            self.assertEqual(
-                mock.call(msg),
-                self.writer.write.mock_calls[idx],
-            )
 
-class NumberGuessingGameTests(TestCase):
+class NumberGuessingGameTests(unittest.TestCase):
     def setUp(self):
         self.writer = mock.Mock()
         self.reader = mock.Mock()
@@ -111,3 +96,10 @@ class NumberGuessingGameTests(TestCase):
             'Incorrect! 1 guess remaining',
             'Failure! The correct number was 4',
         ])
+
+    def assertMessages(self, messages: list[str]) -> None:
+        for idx, msg in enumerate(messages):
+            self.assertEqual(
+                mock.call(msg),
+                self.writer.write.mock_calls[idx],
+            )
