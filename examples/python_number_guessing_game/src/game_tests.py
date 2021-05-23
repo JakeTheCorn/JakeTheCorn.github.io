@@ -7,6 +7,7 @@
         √ It writes message with Failure and how many guesses left when user is wrong
         √ It automatically ignores leading and trailing whitespace from user input.
         √ It decrements available guesses after multiple wrong guesses
+        - It allows for configuration of max guesses
 """
 
 import unittest
@@ -109,6 +110,20 @@ class NumberGuessingGameTests(unittest.TestCase):
             'Failure! The correct number was 4',
         ])
 
+    def test_it_enables_callers_to_configure_max_guesses(self):
+        self.setReturns(
+            guesses=['1'],
+            get_random_integer=4,
+        )
+        self.game.configure(
+            max_guesses=1,
+        ).play()
+        self.assertMessages([
+            'Welcome to the number guessing game',
+            'Please pick a number between 1 and 10',
+            'Failure! The correct number was 4',
+        ])
+
     # helpers
     def assertMessages(self, messages: list[str]) -> None:
         for idx, msg in enumerate(messages):
@@ -119,8 +134,9 @@ class NumberGuessingGameTests(unittest.TestCase):
 
     def setReturns(
         self,
+        *,
         guesses,
-        get_random_integer
+        get_random_integer,
     ):
         self.reader.read.side_effect = guesses
         self.random_integer_getter.get_random_integer.return_value = get_random_integer
