@@ -7,7 +7,7 @@
         √ It writes message with Failure and how many guesses left when user is wrong
         √ It automatically ignores leading and trailing whitespace from user input.
         √ It decrements available guesses after multiple wrong guesses
-        - It allows for configuration of max guesses
+        √ It allows for configuration of max guesses
 """
 
 import unittest
