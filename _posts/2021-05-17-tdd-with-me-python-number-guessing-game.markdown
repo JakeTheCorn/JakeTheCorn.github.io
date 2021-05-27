@@ -683,8 +683,6 @@ AssertionError: Expected 'read' to have been called once. Called 0 times.
 
 We have the same problem as before, our Game does not know about anything that accepts user input -- our Reader...
 
-<!-- todo: talk about using abstraction to get around IO -->
-
 Let's do the same thing we did for our Writer, let's pass our reader into our Game's constructor.
 
 our code looks like this...
@@ -771,8 +769,6 @@ user_guess = self._reader.read()
 {% endhighlight %}
 
 good, we got past the first assertion, now we have a new error.
-
-<!-- todo: describe fake it until you make it -->
 
 ```
 AssertionError: call('"Hello" is not a valid integer.') != call('Welcome to the number guessing game')
@@ -912,8 +908,6 @@ Let's try that...
 It worked :)
 
 (for bonus points make the test fail to check out what it looks like, it's pretty nice)
-
-<!-- TODO: file check in point -->
 
 ## File check in
 
@@ -1296,20 +1290,240 @@ We remove it and we're good! Now we're back to one failing test... our new one!
 AssertionError: call('Incorrect! 2 guesses remaining') != call('Please pick a number between 1 and 10')
 ```
 
-<!--
-Todo: it prints helpful message if saem guess attempted
- -->
+## Ending for now
+
+### Hopefully I'll come back later and finish this...
+
+but for now I'll paste in what my final code was.  (It's a lot of extra work leaving step by step details)
+
+{% highlight python %}
+
+"""
+    TODO:
+        √ It writes a welcome message before the game begins
+        √ It writes a message asking the player to guess a number between 1 and 10
+        √ It writes a helpful message if user does not enter a valid integer
+        √ It writes a success message if the user inputs a correct guess.
+        √ It writes message with Failure and how many guesses left when user is wrong
+        √ It automatically ignores leading and trailing whitespace from user input.
+        √ It decrements available guesses after multiple wrong guesses
+        √ It allows for configuration of max guesses
+"""
+
+import unittest
+import unittest.mock as mock
+
+class NumberGuessingGameTests(unittest.TestCase):
+    def setUp(self):
+        self.writer = mock.Mock()
+        self.reader = mock.Mock()
+        self.random_integer_getter = mock.Mock()
+        self.game = Game(
+            reader=self.reader,
+            writer=self.writer,
+            random_integer_getter=self.random_integer_getter,
+        )
+
+    def test_it_writes_a_welcome_message_before_the_game_begins(self):
+        self.game.play()
+        self.assertMessages([
+            'Welcome to the number guessing game'
+        ])
+
+    def test_it_writes_a_message_asking_player_to_guess_number_between_1_and_10(self):
+        self.game.play()
+        self.assertMessages([
+            'Welcome to the number guessing game',
+            'Please pick a number between 1 and 10'
+        ])
+
+    def test_it_writes_a_helpful_message_if_user_does_not_enter_valid_integer(self):
+        for user_guess in [
+            'Hello',
+            'Goodbye',
+            '1.1',
+        ]:
+            self.setUp()
+            # bad guess followed by three valid guesses to avoid test hanging
+            self.setReturns(
+                guesses=[user_guess, '1', '2', '3'],
+                get_random_integer=5,
+            )
+            with self.subTest(user_guess):
+                self.game.play()
+                self.assertMessages([
+                    'Welcome to the number guessing game',
+                    'Please pick a number between 1 and 10',
+                    f'"{user_guess}" is not a valid integer.',
+                    'Please pick a number between 1 and 10',
+                ])
+
+    def test_it_writes_a_success_message_if_user_inputs_correct_guess(self):
+        self.setReturns(
+            guesses=['5'],
+            get_random_integer=5,
+        )
+        self.game.play()
+        self.assertMessages([
+            'Welcome to the number guessing game',
+            'Please pick a number between 1 and 10',
+            'Success! The correct number was 5',
+        ])
+
+    def test_it_writes_incorrect_with_how_many_guesses_remain_when_incorrect_guess(self):
+        self.setReturns(
+            guesses=['4', '4', '4'],
+            get_random_integer=2,
+        )
+        self.game.play()
+        self.assertMessages([
+            'Welcome to the number guessing game',
+            'Please pick a number between 1 and 10',
+            'Incorrect! 2 guesses remaining',
+        ])
+
+    def test_it_ignores_trailing_and_leading_whitespace_from_user_input(self):
+        self.setReturns(
+            guesses=[' 3  \n'],
+            get_random_integer=3,
+        )
+        self.game.play()
+        self.assertMessages([
+            'Welcome to the number guessing game',
+            'Please pick a number between 1 and 10',
+            'Success! The correct number was 3',
+        ])
+
+    def test_it_decrements_available_guesses_after_multiple_wrong_guesses(self):
+        self.setReturns(
+            guesses=['1', '2', '3'],
+            get_random_integer=4,
+        )
+        self.game.play()
+        self.assertMessages([
+            'Welcome to the number guessing game',
+            'Please pick a number between 1 and 10',
+            'Incorrect! 2 guesses remaining',
+            'Incorrect! 1 guess remaining',
+            'Failure! The correct number was 4',
+        ])
+
+    def test_it_enables_callers_to_configure_max_guesses(self):
+        self.setReturns(
+            guesses=['1'],
+            get_random_integer=4,
+        )
+        self.game.configure(
+            max_guesses=1,
+        ).play()
+        self.assertMessages([
+            'Welcome to the number guessing game',
+            'Please pick a number between 1 and 10',
+            'Failure! The correct number was 4',
+        ])
+
+    # helpers
+    def assertMessages(self, messages: list[str]) -> None:
+        for idx, msg in enumerate(messages):
+            self.assertEqual(
+                mock.call(msg),
+                self.writer.write.mock_calls[idx],
+            )
+
+    def setReturns(
+        self,
+        *,
+        guesses,
+        get_random_integer,
+    ):
+        self.reader.read.side_effect = guesses
+        self.random_integer_getter.get_random_integer.return_value = get_random_integer
 
 
 
-<!--
+class Game:
+    def __init__(
+        self,
+        *,
+        reader,
+        writer,
+        random_integer_getter,
+    ):
+        self._reader = reader
+        self._writer = writer
+        self._random_integer_getter = random_integer_getter
+        self._max_guesses = 3
 
-TODO: what about whitespace?
+    def play(self):
+        guess_count = 0
+        self._writer.write('Welcome to the number guessing game')
+        self._write_rules()
+        random_number = self._random_integer_getter.get_random_integer()
 
-- When it is not the correct guess
-    - Then a message is written to say incorrect
-    - Then a message is written to say how many guesses remain
-    - When no guesses remain
-        - write a message to saying FAILURE along with the correct integer
+        while guess_count < self._max_guesses:
+            user_guess = self._reader.read().strip()
+            if not user_guess.isdigit():
+                self._writer.write(f'"{user_guess}" is not a valid integer.')
+                self._write_rules()
+                continue
+            guess_count += 1
+            remaining_guesses = self._max_guesses - guess_count
+            if user_guess == str(random_number):
+                self._writer.write(f'Success! The correct number was {random_number}')
+                return
 
- -->
+            if remaining_guesses == 0:
+                self._writer.write(f'Failure! The correct number was {random_number}')
+                return
+            guess_string = 'guesses' if remaining_guesses != 1 else 'guess'
+            self._writer.write(f'Incorrect! {remaining_guesses} {guess_string} remaining')
+
+    def configure(
+        self,
+        *,
+        max_guesses: int = None,
+    ) -> 'Game':
+        if isinstance(max_guesses, int):
+            self._max_guesses = max_guesses
+        return self
+
+    def _write_rules(self):
+        self._writer.write('Please pick a number between 1 and 10')
+
+
+{% endhighlight %}
+
+
+## Bonus - Play your game!
+
+If you'd like to play the game try so like this...
+
+in the test file... at the bottom
+
+{% highlight python %}
+if __name__ == '__main__':
+import random
+
+    class ConsoleReader:
+        def read(self):
+            return input()
+
+    class ConsoleWriter:
+        def write(self, msg: str) -> None:
+            print(msg)
+
+    class RandomIntegerGetter:
+        def get_random_integer(self):
+            return random.randrange(1, 10)
+
+    Game(
+        reader=ConsoleReader(),
+        writer=ConsoleWriter(),
+        random_integer_getter=RandomIntegerGetter(),
+    ).play()
+
+{% endhighlight %}
+
+Thanks for reading...
+
+-- jake
