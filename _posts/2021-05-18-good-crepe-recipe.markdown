@@ -7,7 +7,7 @@ categories: jekyll update
 
 1. Gather Ingredients
    - Beer (Sun King Cream Ale preferably) - 4 soup spoons
-   - Flour (500 grams)
+   - Flour (250 grams)
    - Brown Sugar (70 grams)
    - Milk (500 grams/ml)
    - Canola Oil (2 Soup spoons)
