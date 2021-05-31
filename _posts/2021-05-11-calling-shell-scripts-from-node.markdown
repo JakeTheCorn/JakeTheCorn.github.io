@@ -10,23 +10,23 @@ The callback function can be supplied to do things as the script is processing. 
 
 {% highlight typescript %}
 function runScript(command: string, args: string[], callback: Function = printRunScriptResults) {
-        return new Promise((resolve, reject) => {
-            const child = child_process.spawn(command, args, { shell: true });
-    
-            child.stdout.setEncoding('utf8');
-            child.stdout.on('data', data => callback({ data: data.toString() }));
-        
-            child.stderr.setEncoding('utf8');
-            child.stderr.on('data', data => callback({ error: data.toString() }));
-        
-            child.on('close', (code) => {
-                if (code !== 0) {
-                    return reject(new Error(command + ' ' + args.join(' ') + ' exited with exit code ' + code))
-                }
-                resolve(code);
-            });
+    return new Promise((resolve, reject) => {
+        const child = child_process.spawn(command, args, { shell: true });
+
+        child.stdout.setEncoding('utf8');
+        child.stdout.on('data', data => callback({ data: data.toString() }));
+
+        child.stderr.setEncoding('utf8');
+        child.stderr.on('data', data => callback({ error: data.toString() }));
+
+        child.on('close', (code) => {
+            if (code !== 0) {
+                return reject(new Error(command + ' ' + args.join(' ') + ' exited with exit code ' + code))
+            }
+            resolve(code);
         });
-    }
+    });
+}
 
 function printRunScriptResults({ data, error }) {
     typeof data === 'string' && process.stdout.write(data);
