@@ -47,6 +47,7 @@ exclude:
 #   - Gemfile
 #   - Gemfile.lock
   - 'examples/benchmark-node-function/node_modules/'
+  - 'examples/testing-node-debounce-function/node_modules/'
 #   - vendor/bundle/
 #   - vendor/cache/
 #   - vendor/gems/
