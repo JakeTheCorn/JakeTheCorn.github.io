@@ -11,8 +11,8 @@ export class CatsApiClient {
 
     getCats = async (): Promise<{ data?: string[], error?: Error }> => {
         this.runCallbacks('getCats.start'); // .notify('start')
+        const { httpClient } = this.deps;
         try {
-            const { httpClient } = this.deps;
             const data = await httpClient.get<string[]>('/cats');
             this.runCallbacks('getCats.success', data); // .notify()
             return { data }
@@ -23,7 +23,11 @@ export class CatsApiClient {
     }
 
     // .subscribe(...)
-    on = (event: EventName, handler: Function): this => {
+
+    // on(event: 'getCats.start', handler: () => void)
+    // on(event: 'getCats.success', handler: (data: string[]) => void)
+    // on(event: 'getCats.error', handler: (error: Error) => void)
+    on(event: EventName, handler: Function): this {
         if (!Array.isArray(this.listeners[event])) {
             this.listeners[event] = [];
         }

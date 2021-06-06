@@ -47,7 +47,8 @@ describe('The Observer Pattern', () => {
             let onGetCatsSuccess = jest.fn();
             let onGetCatsError = jest.fn();
 
-            let client = new CatsApiClient({ httpClient })
+            let client = new CatsApiClient({ httpClient });
+            client
                 .on('getCats.start', onGetCatsStart)
                 .on('getCats.success', onGetCatsSuccess)
                 .on('getCats.error', onGetCatsError);
@@ -58,7 +59,9 @@ describe('The Observer Pattern', () => {
             expect(onGetCatsSuccess).not.toHaveBeenCalled();
             expect(onGetCatsError).toHaveBeenCalledTimes(0);
 
-            await resolve(['beefcake' ,'muscle-cat']);
+            await resolve({
+                data: ['beefcake' ,'muscle-cat'],
+            });
 
             expect(onGetCatsStart).toHaveBeenCalledTimes(1);
             expect(onGetCatsSuccess).toHaveBeenCalledTimes(1);
