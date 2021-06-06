@@ -24,9 +24,9 @@ export class CatsApiClient {
 
     // .subscribe(...)
 
-    // on(event: 'getCats.start', handler: () => void)
-    // on(event: 'getCats.success', handler: (data: string[]) => void)
-    // on(event: 'getCats.error', handler: (error: Error) => void)
+    on(event: 'getCats.start', handler: () => void)
+    on(event: 'getCats.success', handler: (data: string[]) => void)
+    on(event: 'getCats.error', handler: (error: Error) => void)
     on(event: EventName, handler: Function): this {
         if (!Array.isArray(this.listeners[event])) {
             this.listeners[event] = [];

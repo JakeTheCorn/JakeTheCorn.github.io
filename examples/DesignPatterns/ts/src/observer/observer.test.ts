@@ -29,7 +29,7 @@
 import { CatsApiClient } from "./CatsApiClient";
 
 describe('The Observer Pattern', () => {
-    describe('how it works', () => {
+    describe('how it works...', () => {
         it('allows clients to "subscribe" to events they care about', async () => {
             let resolve;
             let reject;
@@ -59,12 +59,13 @@ describe('The Observer Pattern', () => {
             expect(onGetCatsSuccess).not.toHaveBeenCalled();
             expect(onGetCatsError).toHaveBeenCalledTimes(0);
 
-            await resolve({
-                data: ['beefcake' ,'muscle-cat'],
-            });
+            const catNames = ['beefcake' ,'muscle-cat'];
+
+            await resolve(catNames);
 
             expect(onGetCatsStart).toHaveBeenCalledTimes(1);
             expect(onGetCatsSuccess).toHaveBeenCalledTimes(1);
+            expect(onGetCatsSuccess).toHaveBeenCalledWith(catNames);
             expect(onGetCatsError).toHaveBeenCalledTimes(0);
 
             jest.resetAllMocks();
