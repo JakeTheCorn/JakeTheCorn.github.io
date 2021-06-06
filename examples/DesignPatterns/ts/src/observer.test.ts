@@ -64,9 +64,7 @@ describe('The Observer Pattern', () => {
             expect(onGetCatsSuccess).toHaveBeenCalledTimes(1);
             expect(onGetCatsError).toHaveBeenCalledTimes(0);
 
-            onGetCatsStart = jest.fn();
-            onGetCatsSuccess = jest.fn();
-            onGetCatsError = jest.fn();
+            jest.resetAllMocks();
 
             client = new CatsApiClient({ httpClient })
                 .on('getCats.start', onGetCatsStart)
