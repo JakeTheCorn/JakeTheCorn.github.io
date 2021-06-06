@@ -1,60 +1,39 @@
-import axios from 'axios'
-
-class ApiClient {
-    get<T>(url): Promise<T> {
-        return axios
-            .get(url)
-            .then(x => x.data)
-    }
-}
-
 interface ICatsApiClientDeps {
     httpClient: {
         get<T>(url): Promise<T>
     }
 }
 
-export class CatsApiClient extends ApiClient {
+export class CatsApiClient {
     private listeners = {}
 
-    constructor(private deps: ICatsApiClientDeps) {
-        super(); // todo
-    }
+    constructor(private deps: ICatsApiClientDeps) {}
 
     getCats = async (): Promise<{ data?: string[], error?: Error }> => {
-        const onStartCallbacks = this.listeners['getCats.start']
-        if (Array.isArray(onStartCallbacks)) {
-            onStartCallbacks.forEach(f => f())
-        }
+        this.runCallbacks('getCats.start'); // .notify('start')
         try {
             const { httpClient } = this.deps;
-            const response = await httpClient.get<string[]>('/cats');
-            const onSuccessCallbacks = this.listeners['getCats.success'];
-            if (Array.isArray(onSuccessCallbacks)) {
-                for (const onSuccess of onSuccessCallbacks) {
-                    typeof onSuccess === 'function' && onSuccess(response)
-                }
-            }
-            return {
-                data: response,
-            }
+            const data = await httpClient.get<string[]>('/cats');
+            this.runCallbacks('getCats.success', data); // .notify()
+            return { data }
         } catch (error) {
-            const onErrorCallbacks = this.listeners['getCats.error'];
-            if (Array.isArray(onErrorCallbacks)) {
-                onErrorCallbacks.forEach(f => f(error))
-            }
-            return {
-                error,
-            }
+            this.runCallbacks('getCats.error', error); // .notify()
+            return { error }
         }
     }
 
+    // .subscribe(...)
     on = (event: EventName, handler: Function): this => {
         if (!Array.isArray(this.listeners[event])) {
             this.listeners[event] = [];
         }
         this.listeners[event].push(handler);
         return this;
+    }
+
+    private runCallbacks = (event: EventName, ...args: unknown[]): void => {
+        const callbacks = this.listeners[event];
+        Array.isArray(callbacks) && callbacks.forEach(f => f(...args))
     }
 }
 
