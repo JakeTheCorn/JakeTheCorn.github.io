@@ -5,8 +5,9 @@ date:   2021-06-02 09:00:00 -0400
 categories: jekyll update
 ---
 
-
 # The Observer Pattern
+
+TL;DR; "Call me when something I care about occurs".
 
 The Problem occurs when a client cares about a particular event.
 
@@ -31,6 +32,34 @@ For this example we'll use the status of a network call. Let's say it has 3 poss
 For this example we don't care what we would like to do during these states, that's up to larger
 application concerns
 
+## Details
+
+There are two members in the observer pattern...
+
+the Subject - the one being observed
+and
+the Observer - the one who is observing
+
+sometimes referred to by different names.
+
+it works by the subject having a `.subscribe(Observer observer)` that takes in an observer.
+
+when `.subscribe(Observer observer)` is called, the Subject adds the Observer to some kind of collection it is tracking -- basically a list of who to call when an event happens.
+
+but what to call?
+
+there will be something analogous to an `.update(...)` method on the observer class that the Subject will know to call with relevant updates.
+
+but..
+
+## The code does not have to read exactly the same to be using a particular pattern
+
+in this example, I'm be using the method `on(event: EventName, handler: Function)` instead of the more
+standard `.subscribe(...)`.
+
+and in place of the standard `.update(...)` method, I'm using regular old functions, since JS supports first class functions.
+
+but it's the same idea.  "Call me when something I care about occurs".
 
 ## Tests
 
@@ -103,15 +132,6 @@ describe('The Observer Pattern', () => {
     })
 })
 {% endhighlight %}
-
-## The code does not have to read exactly the same to be using a particular pattern
-
-in this example, I'm using the method "on(event: EventName, handler: Function)" instead of the more
-standard .subscribe(...).
-
-and in place of the standard .update() method, I'm using regular old functions, since JS supports first class functions.
-
-but it's the same idea.
 
 ## Implementation
 
