@@ -35,33 +35,42 @@ Normally I'd like to use tests to run this, but the best example I could come up
 html table which in my opinion is a little more revealing of the pattern and easier to just view in browser.  It could be tested, but it's more pleasant to view the result.  So create a file called main.rb, paste in the following and run it to check it out.
 
 {% highlight ruby %}
-
 class TableRenderer
+  def initialize(items:)
+    @items = items || []
+  end
+
   def render
-    items = get_items
-    row_output = ''
-    header_output = ''
-    items.each_with_index do |item, index|
-      cells = []
-      item.each do |key, value|
-        if index == 0
-          header_cell = render_header_cell(key: key)
-          header_output += header_cell
-        end
-        rendered_cell = render_cell(
-          key: key,
-          value: value
-        )
-        cells << rendered_cell
+    body = ''
+    header = ''
+
+    @items.each_with_index do |item, index|
+      if index == 0
+        header = build_header(item: item)
       end
-      rendered_row = render_row(cells: cells)
-      row_output += rendered_row
+      body += build_row(item: item)
     end
-    row_output = "<tbody>#{row_output}</tbody>"
-    "<table>#{header_output}#{row_output}</table>"
+    body = "<tbody>#{body}</tbody>"
+    "<table>#{header}#{body}</table>"
   end
 
   protected
+    def build_row(item:)
+      cells = []
+      item.each do |key, value|
+        cells << render_cell(key: key, value: value)
+      end
+      build_row_contents(cells: cells)
+    end
+
+    def build_header(item:)
+      header_output = ''
+      item.each do |key, _value|
+        header_output += render_header_cell(key: key)
+      end
+      %{<thead>#{header_output}</thead>}
+    end
+
     def render_header_cell(key:)
       "<th>#{key}</th>"
     end
@@ -70,7 +79,7 @@ class TableRenderer
       "<td>#{value}</td>"
     end
 
-    def render_row(cells:)
+    def build_row_contents(cells:)
       output = ''
 
       for cell in cells do
@@ -78,30 +87,14 @@ class TableRenderer
       end
       "<tr>#{output}</tr>"
     end
-
-    def get_items
-      []
-    end
 end
 
 class EmployeesTableRenderer < TableRenderer
-  protected
-    def get_items
-      [
-        { name: 'bob', age: 45 }
-      ]
-    end
+  # get_column_mapping?
 end
 
 class QuartersTableRenderer < TableRenderer
   protected
-    def get_items
-      [
-        { "year" => "2012", "q1" => 13000, "q2" => 1000, "q3" => 2000, "q4" => 2000, },
-        { "year" => "2013", "q1" => 13000, "q2" => 1000, "q3" => 2000, "q4" => 2000, },
-      ]
-    end
-
     def render_cell(key:, value:)
       if key != "year"
         return super
@@ -115,13 +108,22 @@ class QuartersTableRenderer < TableRenderer
 end
 
 
+employees = [
+  { "name" => 'bob', "age" => 45 },
+]
+
+quarters = [
+  { "year" => "2012", "q1" => 13000, "q2" => 1000, "q3" => 2000, "q4" => 2000, },
+  { "year" => "2013", "q1" => 13000, "q2" => 1000, "q3" => 2000, "q4" => 2000, },
+]
+
 html =
 %{<html>
   <head>
   </head>
   <body>
-      #{EmployeesTableRenderer.new().render}
-      #{QuartersTableRenderer.new().render}
+      #{EmployeesTableRenderer.new(items: employees).render}
+      #{QuartersTableRenderer.new(items: quarters).render}
   </body>
 </html>
 }
