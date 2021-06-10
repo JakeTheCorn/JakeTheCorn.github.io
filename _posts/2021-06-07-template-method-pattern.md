@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Design Patterns - Template Method - C#"
+title:  "Design Patterns - Template Method - Ruby"
 date:   2021-06-07 09:00:00 -0400
 categories: jekyll update
 ---
@@ -26,49 +26,124 @@ that the company did not have to print redundant directions for both installatio
 
 The Template method pattern is any time when a "Fill in the blanks" kind of solution can take place.
 
-For this example we'll parse some data for the results of classes for some students.
+Meaning that essentially a generic algorithm gets defined in a parent class where most of the steps are sort of worked
+out.  But then child classes "Fill in the blanks" in a way that is important for them.
 
-The problem is that one class listing comes to us in Json (JavaScript Object Notation) and one comes to us in
-Csv - (Comma Separated Values)...
+To illustrate this example, some ruby code...
 
-Here is the Csv results for Chemistry 101...
-```
-StudentLastName,StudentFirstName,GradePercentage
-Johnson,John,50
-Silver,Silvia,67
-```
+Normally I'd like to use tests to run this, but the best example I could come up with was a little
+html table which in my opinion is a little more revealing of the pattern and easier to just view in browser.  It could be tested, but it's more pleasant to view the result.  So create a file called main.rb, paste in the following and run it to check it out.
 
-and here are the Json results for English Literature...
+{% highlight ruby %}
 
-{% highlight json %}
-{
-    "student": {
-        "firstName": "John",
-        "lastName": "Johnson",
-        "gradePercentage": 34
-    },
-    "student": {
-        "firstName": "Silvia",
-        "lastName": "Silver",
-        "gradePercentage": 26
-    }
+class TableRenderer
+  def render
+    items = get_items
+    row_output = ''
+    header_output = ''
+    items.each_with_index do |item, index|
+      cells = []
+      item.each do |key, value|
+        if index == 0
+          header_cell = render_header_cell(key: key)
+          header_output += header_cell
+        end
+        rendered_cell = render_cell(
+          key: key,
+          value: value
+        )
+        cells << rendered_cell
+      end
+      rendered_row = render_row(cells: cells)
+      row_output += rendered_row
+    end
+    row_output = "<tbody>#{row_output}</tbody>"
+    "<table>#{header_output}#{row_output}</table>"
+  end
+
+  protected
+    def render_header_cell(key:)
+      "<th>#{key}</th>"
+    end
+
+    def render_cell(key:, value:)
+      "<td>#{value}</td>"
+    end
+
+    def render_row(cells:)
+      output = ''
+
+      for cell in cells do
+        output += cell
+      end
+      "<tr>#{output}</tr>"
+    end
+
+    def get_items
+      []
+    end
+end
+
+class EmployeesTableRenderer < TableRenderer
+  protected
+    def get_items
+      [
+        { name: 'bob', age: 45 }
+      ]
+    end
+end
+
+class QuartersTableRenderer < TableRenderer
+  protected
+    def get_items
+      [
+        { "year" => "2012", "q1" => 13000, "q2" => 1000, "q3" => 2000, "q4" => 2000, },
+        { "year" => "2013", "q1" => 13000, "q2" => 1000, "q3" => 2000, "q4" => 2000, },
+      ]
+    end
+
+    def render_cell(key:, value:)
+      if key != "year"
+        return super
+      end
+      %{<td><a href="https://en.wikipedia.org/wiki/#{value}">#{value}</a></td>}
+    end
+
+    def render_header_cell(key:)
+      %{<th style="color: green;">#{key}</th>}
+    end
+end
+
+
+html =
+%{<html>
+  <head>
+  </head>
+  <body>
+      #{EmployeesTableRenderer.new().render}
+      #{QuartersTableRenderer.new().render}
+  </body>
+</html>
 }
+
+File.write('index.html', html)
+
 {% endhighlight %}
 
+then run the file
 
-(these are not the brightest two in their grade...)
-
-There is a piece of software in our school that takes all of the class reports and runs through them to gather all of the
-grades for each student and produce a Report Card.  In order to create this report card we need to produce a data class
-similar to...
-
-{% highlight csharp %}
-public class StudentClassGrade
-{
-    public string FirstName { get; set; }
-    public string LastName { get; set; }
-    public double GradePercentage { get; set; }
-}
+{% highlight bash %}
+ruby main.rb
 {% endhighlight %}
+
+This should generate an index.html
+
+Open it in your favorite browser
+
+You should see something like this...
+
+<table><th>name</th><th>age</th><tbody><tr><td>bob</td><td>45</td></tr></tbody></table>
+
+<table><th style="color: green;">year</th><th style="color: green;">q1</th><th style="color: green;">q2</th><th style="color: green;">q3</th><th style="color: green;">q4</th><tbody><tr><td><a href="https://en.wikipedia.org/wiki/2012">2012</a></td><td>13000</td><td>1000</td><td>2000</td><td>2000</td></tr><tr><td><a href="https://en.wikipedia.org/wiki/2013">2013</a></td><td>13000</td><td>1000</td><td>2000</td><td>2000</td></tr></tbody></table>
 
 
