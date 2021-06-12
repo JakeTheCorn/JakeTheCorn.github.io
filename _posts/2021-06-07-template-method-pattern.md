@@ -29,10 +29,13 @@ The Template method pattern is any time when a "Fill in the blanks" kind of solu
 Meaning that essentially a generic algorithm gets defined in a parent class where most of the steps are sort of worked
 out.  But then child classes "Fill in the blanks" in a way that is important for them.
 
+Most of the steps are defined in the parent, but then children can change parts as needed.
+
+This is especially useful for design time deviations in the algorithm.
+
 To illustrate this example, some ruby code...
 
-Normally I'd like to use tests to run this, but the best example I could come up with was a little
-html table which in my opinion is a little more revealing of the pattern and easier to just view in browser.  It could be tested, but it's more pleasant to view the result.  So create a file called main.rb, paste in the following and run it to check it out.
+This may not be the ***best*** example, however, I write in my off time and hopefully can be forgiven the contrived example, any structural concerns, or lack of tests..
 
 {% highlight ruby %}
 class TableRenderer
@@ -58,7 +61,7 @@ class TableRenderer
     def build_row(item:)
       cells = []
       item.each do |key, value|
-        cells << render_cell(key: key, value: value)
+        cells << build_cell(key: key, value: value)
       end
       build_row_contents(cells: cells)
     end
@@ -66,16 +69,16 @@ class TableRenderer
     def build_header(item:)
       header_output = ''
       item.each do |key, _value|
-        header_output += render_header_cell(key: key)
+        header_output += build_header_cell(key: key)
       end
       %{<thead>#{header_output}</thead>}
     end
 
-    def render_header_cell(key:)
+    def build_header_cell(key:)
       "<th>#{key}</th>"
     end
 
-    def render_cell(key:, value:)
+    def build_cell(key:, value:)
       "<td>#{value}</td>"
     end
 
@@ -90,19 +93,22 @@ class TableRenderer
 end
 
 class EmployeesTableRenderer < TableRenderer
-  # get_column_mapping?
+  protected
+    def build_header_cell(key:)
+      "<th>#{key.upcase}</th>"
+    end
 end
 
 class QuartersTableRenderer < TableRenderer
   protected
-    def render_cell(key:, value:)
+    def build_cell(key:, value:)
       if key != "year"
         return super
       end
       %{<td><a href="https://en.wikipedia.org/wiki/#{value}">#{value}</a></td>}
     end
 
-    def render_header_cell(key:)
+    def build_header_cell(key:)
       %{<th style="color: green;">#{key}</th>}
     end
 end
@@ -144,8 +150,7 @@ Open it in your favorite browser
 
 You should see something like this...
 
-<table><th>name</th><th>age</th><tbody><tr><td>bob</td><td>45</td></tr></tbody></table>
-
-<table><th style="color: green;">year</th><th style="color: green;">q1</th><th style="color: green;">q2</th><th style="color: green;">q3</th><th style="color: green;">q4</th><tbody><tr><td><a href="https://en.wikipedia.org/wiki/2012">2012</a></td><td>13000</td><td>1000</td><td>2000</td><td>2000</td></tr><tr><td><a href="https://en.wikipedia.org/wiki/2013">2013</a></td><td>13000</td><td>1000</td><td>2000</td><td>2000</td></tr></tbody></table>
+<table><thead><th>NAME</th><th>AGE</th></thead><tbody><tr><td>bob</td><td>45</td></tr></tbody></table>
+<table><thead><th style="color: green;">year</th><th style="color: green;">q1</th><th style="color: green;">q2</th><th style="color: green;">q3</th><th style="color: green;">q4</th></thead><tbody><tr><td><a href="https://en.wikipedia.org/wiki/2012">2012</a></td><td>13000</td><td>1000</td><td>2000</td><td>2000</td></tr><tr><td><a href="https://en.wikipedia.org/wiki/2013">2013</a></td><td>13000</td><td>1000</td><td>2000</td><td>2000</td></tr></tbody></table>
 
 
