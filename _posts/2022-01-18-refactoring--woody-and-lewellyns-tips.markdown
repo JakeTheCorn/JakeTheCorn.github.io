@@ -50,3 +50,11 @@ Some quotes I like about refactoring.
 
   > "Good" is the enemy of "slightly less terrible" -- Arlo Benshee
 
+One from Kent Beck...
+
+> Strive to make the design of the system a perfect git for the needs of the system that day -- Kent Beck
+
+I like this one a lot because it empowers us to design the system as well as it could be, without some kind of 
+fortune telling or forecasting... We tend to always know the needs of the system for a given day and so it is
+possible for us to design it perfectly to meet those needs... (At least we "Strive" to...)
+
